@@ -9,15 +9,29 @@ module Gmail
       :flagged   => ['FLAGGED'],
       :unflagged => ['UNFLAGGED'],
       :starred   => ['FLAGGED'],
-      :unstarred => ['UNFLAGGED'], 
+      :unstarred => ['UNFLAGGED'],
       :deleted   => ['DELETED'],
       :undeleted => ['UNDELETED'],
       :draft     => ['DRAFT'],
       :undrafted => ['UNDRAFT']
     }
-  
+
+    FLAG_ALIASES = {
+      :msgid       => ['X-GM-MSGID'],
+      :uid       => ['UID'],
+      :body      => ['BODY'],
+      :structure => ['BODYSTRUCTURE'],
+      :envelope  => ['ENVELOPE'],
+      :flags     => ['FLAGS'],
+      :date      => ['INTERNALDATE'],
+      :header    => ['RFC822.HEADER'],
+      :size      => ['RFC822.SIZE'],
+      :text      => ['RFC822.TEXT']
+    }
+
     attr_reader :name
     attr_reader :external_name
+    attr_accessor :total
 
     def initialize(gmail, name="INBOX")
       @name  = name
@@ -25,7 +39,28 @@ module Gmail
       @gmail = gmail
     end
 
-    # Returns list of emails which meets given criteria. 
+    def fetch(range, &block)
+      search = [ FLAG_ALIASES[:msgid], FLAG_ALIASES[:uid], FLAG_ALIASES[:flags], FLAG_ALIASES[:size], FLAG_ALIASES[:envelope] ]
+
+      @gmail.mailbox(name) do
+        list = @gmail.conn.fetch(range, "(#{search.join(' ')})") || []
+
+        list.map do |msg|
+          msgid = msg.attr['X-GM-MSGID']
+          uid = msg.attr['UID']
+          size = msg.attr['RFC822.SIZE']
+          envelope = msg.attr['ENVELOPE']
+          header = msg.attr['RFC822.HEADER']
+          flags = msg.attr['FLAGS']
+
+          (messages[uid] ||= Message.new(self, msgid, uid, size, envelope, header, flags))
+
+          #yield(message)
+        end
+      end
+    end
+
+    # Returns list of emails which meets given criteria.
     #
     # ==== Examples
     #
@@ -34,7 +69,7 @@ module Gmail
     #   gmail.inbox.emails(:all, :after => Time.now-(20*24*3600))
     #   gmail.mailbox("Test").emails(:read)
     #
-    #   gmail.mailbox("Test") do |box| 
+    #   gmail.mailbox("Test") do |box|
     #     box.emails(:read)
     #     box.emails(:unread) do |email|
     #       ... do something with each email...
@@ -43,10 +78,10 @@ module Gmail
     def emails(*args, &block)
       args << :all if args.size == 0
 
-      if args.first.is_a?(Symbol) 
+      if args.first.is_a?(Symbol)
         search = MAILBOX_ALIASES[args.shift].dup
         opts = args.first.is_a?(Hash) ? args.first : {}
-        
+
         opts[:after]      and search.concat ['SINCE', opts[:after].to_imap_date]
         opts[:before]     and search.concat ['BEFORE', opts[:before].to_imap_date]
         opts[:on]         and search.concat ['ON', opts[:on].to_imap_date]
@@ -60,8 +95,8 @@ module Gmail
         opts[:query]      and search.concat opts[:query]
 
         @gmail.mailbox(name) do
-          @gmail.conn.uid_search(search).collect do |uid| 
-            message = (messages[uid] ||= Message.new(self, uid))
+          @gmail.conn.uid_search(search).collect do |uid|
+            message = (messages[uid] ||= Message.new(self, nil, uid))
             block.call(message) if block_given?
             message
           end
@@ -77,8 +112,8 @@ module Gmail
     alias :find :emails
     alias :filter :emails
 
-    # This is a convenience method that really probably shouldn't need to exist, 
-    # but it does make code more readable, if seriously all you want is the count 
+    # This is a convenience method that really probably shouldn't need to exist,
+    # but it does make code more readable, if seriously all you want is the count
     # of messages.
     #
     # ==== Examples
@@ -95,11 +130,11 @@ module Gmail
       @gmail.mailbox(name) { @gmail.conn.expunge }
     end
 
-    # Cached messages. 
+    # Cached messages.
     def messages
       @messages ||= {}
     end
-    
+
     def inspect
       "#<Gmail::Mailbox#{'0x%04x' % (object_id << 1)} name=#{external_name}>"
     end
