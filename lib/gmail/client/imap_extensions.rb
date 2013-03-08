@@ -5,15 +5,15 @@ module GmailImapExtensions
   def self.patch_net_imap_response_parser(klass = Net::IMAP::ResponseParser)
     klass.class_eval do
       def msg_att
-        match(T_LPAR)
+        match(Net::IMAP::ResponseParser::T_LPAR)
         attr = {}
         while true
           token = lookahead
           case token.symbol
-          when T_RPAR
+          when Net::IMAP::ResponseParser::T_RPAR
             shift_token
             break
-          when T_SPACE
+          when Net::IMAP::ResponseParser::T_SPACE
             shift_token
             token = lookahead
           end
@@ -32,14 +32,14 @@ module GmailImapExtensions
             name, val = body_data
           when /\A(?:UID)\z/ni
             name, val = uid_data
-      
+
           # Gmail extension additions.
           # Cargo-Cult code warning: # I have no idea why the regexp - just copying a pattern
           when /\A(?:X-GM-LABELS)\z/ni
             name, val = flags_data
-          when /\A(?:X-GM-MSGID)\z/ni 
+          when /\A(?:X-GM-MSGID)\z/ni
             name, val = uid_data
-          when /\A(?:X-GM-THRID)\z/ni 
+          when /\A(?:X-GM-THRID)\z/ni
             name, val = uid_data
           else
             parse_error("unknown attribute `%s'", token.value)
