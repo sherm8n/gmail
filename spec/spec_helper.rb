@@ -7,14 +7,17 @@ require 'mocha/api'
 require 'yaml'
 require 'gmail'
 
-RSpec.configure do |config| 
+RSpec.configure do |config|
   config.mock_with :mocha
 end
 
 def within_gmail(&block)
-  gmail = Gmail.connect!(*TEST_ACCOUNT["plain"])
-  yield(gmail)
-  gmail.logout if gmail
+  Gmail.connect!(*TEST_ACCOUNT["plain"]) do |gmail|
+    yield(gmail)
+  end
+  #gmail = Gmail.connect!(*TEST_ACCOUNT["plain"])
+  #yield(gmail)
+  #gmail.logout if gmail
 end
 
 def mock_mailbox(box="INBOX", &block)

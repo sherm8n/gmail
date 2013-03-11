@@ -8,7 +8,7 @@ module Gmail
     attr_reader :uid, :msgid
 
     #TODO refactor to options hash
-    def initialize(mailbox, msgid, uid, size = nil, envelope = nil, header = nil, flags = nil)
+    def initialize(mailbox, msgid, uid, size = nil, envelope = nil, flags = nil)
       @mailbox = mailbox
       @gmail   = mailbox.instance_variable_get("@gmail") if mailbox
 
@@ -16,7 +16,7 @@ module Gmail
       @uid = uid
       @size = size
       @envelope = envelope
-      @header = header
+      #@header = header
       @flags = flags
     end
 
@@ -143,6 +143,7 @@ module Gmail
     end
 
     def method_missing(meth, *args, &block)
+      puts "Missing:#{meth}"
       # Delegate rest directly to the message.
       if envelope.respond_to?(meth)
         envelope.send(meth, *args, &block)
@@ -182,16 +183,14 @@ module Gmail
     end
     alias_method :raw_message, :message
 
-    def header
-      @header ||= Mail.new(@gmail.mailbox(@mailbox.name) {
-        @gmail.conn.uid_fetch(uid, "RFC822.HEADER")[0].attr["RFC822.HEADER"] # RFC822
-      })
-    end
+    #def header
+    #  @header ||= Mail.new(@gmail.mailbox(@mailbox.name) {
+    #    @gmail.conn.uid_fetch(uid, "RFC822.HEADER")[0].attr["RFC822.HEADER"] # RFC822
+    #  })
+    #end
 
     def flags
-      @flags ||= Mail.new(@gmail.mailbox(@mailbox.name) {
-        @gmail.conn.uid_fetch(uid, "FLAGS")[0].attr["FLAGS"]
-      })
+      @flags ||= Mail.new(@gmail.conn.uid_fetch(uid, "FLAGS")[0].attr["FLAGS"])
     end
   end # Message
 end # Gmail
