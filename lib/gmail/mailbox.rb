@@ -18,6 +18,7 @@ module Gmail
 
     FLAG_ALIASES = {
       :msgid       => ['X-GM-MSGID'],
+      :labels       => ['X-GM-LABELS'],
       :uid       => ['UID'],
       :body      => ['BODY'],
       :structure => ['BODYSTRUCTURE'],
@@ -40,19 +41,20 @@ module Gmail
     end
 
     def fetch(range, &block)
-      search = [ FLAG_ALIASES[:msgid], FLAG_ALIASES[:uid], FLAG_ALIASES[:flags], FLAG_ALIASES[:size], FLAG_ALIASES[:envelope] ]
+      search = [ FLAG_ALIASES[:msgid], FLAG_ALIASES[:uid], FLAG_ALIASES[:labels], FLAG_ALIASES[:flags], FLAG_ALIASES[:size], FLAG_ALIASES[:envelope] ]
 
       @gmail.mailbox(name) do
         list = @gmail.conn.fetch(range, "(#{search.join(' ')})") || []
 
         list.each do |msg|
           msgid = msg.attr['X-GM-MSGID']
+          labels = msg.attr['X-GM-LABELS']
           uid = msg.attr['UID']
           size = msg.attr['RFC822.SIZE']
           envelope = msg.attr['ENVELOPE']
           flags = msg.attr['FLAGS']
 
-          message = (messages[uid] ||= Message.new(self, msgid, uid, size, envelope, flags))
+          message = (messages[uid] ||= Message.new(self, msgid, uid, size, envelope, flags, labels))
           yield(message)
         end
       end

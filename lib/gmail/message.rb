@@ -8,23 +8,21 @@ module Gmail
     attr_reader :uid, :msgid
 
     #TODO refactor to options hash
-    def initialize(mailbox, msgid, uid, size = nil, envelope = nil, flags = nil)
+    def initialize(mailbox, msgid, uid, size = nil, envelope = nil, flags = nil, labels = nil)
       @mailbox = mailbox
       @gmail   = mailbox.instance_variable_get("@gmail") if mailbox
-
       @msgid = msgid
       @uid = uid
       @size = size
       @envelope = envelope
-      #@header = header
       @flags = flags
+      @labels = labels
     end
 
     def labels
-      @gmail.conn.uid_fetch(uid, "X-GM-LABELS")[0].attr["X-GM-LABELS"]
+      @labels ||= @gmail.conn.uid_fetch(uid, "X-GM-LABELS")[0].attr["X-GM-LABELS"]
     end
 
-    #isn't this method overrides created by attr_reader?
     def uid
       @uid ||= @gmail.conn.uid_search(['HEADER', 'Message-ID', message_id])[0]
     end
