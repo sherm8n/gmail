@@ -81,10 +81,12 @@ module Gmail
     # Move to trash / bin.
     def delete!
       @mailbox.messages.delete(uid)
-      flag(:deleted)
+      #flag(:deleted)
 
       # For some, it's called "Trash", for others, it's called "Bin". Support both.
-      trash =  @gmail.labels.exist?('[Gmail]/Bin') ? '[Gmail]/Bin' : '[Gmail]/Trash'
+
+      #trash =  @gmail.labels.exist?('[Gmail]/Bin') ? '[Gmail]/Bin' : '[Gmail]/Trash'
+      !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "+X-GM-LABELS", ['\Trash']) }
       move_to(trash) unless %w[[Gmail]/Spam [Gmail]/Bin [Gmail]/Trash].include?(@mailbox.name)
     end
 
