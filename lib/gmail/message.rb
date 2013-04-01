@@ -87,7 +87,7 @@ module Gmail
 
       #trash =  @gmail.labels.exist?('[Gmail]/Bin') ? '[Gmail]/Bin' : '[Gmail]/Trash'
       !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "+X-GM-LABELS", ['\Trash']) }
-      move_to(trash) unless %w[[Gmail]/Spam [Gmail]/Bin [Gmail]/Trash].include?(@mailbox.name)
+      #move_to(trash) unless %w[[Gmail]/Spam [Gmail]/Bin [Gmail]/Trash].include?(@mailbox.name)
     end
 
     # Archive this message.
