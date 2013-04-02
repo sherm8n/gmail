@@ -78,6 +78,22 @@ module Gmail
       !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "-X-GM-LABELS", ['\Starred']) }
     end
 
+    def add_label(name)
+      !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "+X-GM-LABELS", [name]) }
+    end
+
+    def add_label!(name)
+      label(name)
+    rescue Gmail::Message::NoLabelError
+      @gmail.labels.add(Net::IMAP.encode_utf7(name))
+      add_label(name)
+    end
+
+    def remove_label!(name)
+      !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "-X-GM-LABELS", [name]) }
+    end
+
+
     # Move to trash / bin.
     def delete!
       @mailbox.messages.delete(uid)
@@ -113,9 +129,9 @@ module Gmail
     # it will raise <tt>NoLabelError</tt>.
     #
     # See also <tt>Gmail::Message#label!</tt>.
-    def label(name, from=nil)
+    def label(name)
       @gmail.mailbox(Net::IMAP.encode_utf7(from || @mailbox.external_name)) { @gmail.conn.uid_copy(uid, Net::IMAP.encode_utf7(name)) }
-    rescue Net::IMAP::NoResponseError
+    rescue
       raise NoLabelError, "Label '#{name}' doesn't exist!"
     end
 
@@ -123,20 +139,20 @@ module Gmail
     # it will be automaticaly created.
     #
     # See also <tt>Gmail::Message#label</tt>.
-    def label!(name, from=nil)
-      label(name, from)
-    rescue NoLabelError
-      @gmail.labels.add(Net::IMAP.encode_utf7(name))
-      label(name, from)
-    end
-    alias :add_label :label!
-    alias :add_label! :label!
+    #def label!(name)
+    #  label(name)
+    #rescue NoLabelError
+    #  @gmail.labels.add(Net::IMAP.encode_utf7(name))
+    #  label(name)
+    #end
+    #alias :add_label :label!
+    #alias :add_label! :label!
 
     # Remove given label from this message.
-    def remove_label!(name)
-      move_to('[Gmail]/All Mail', name)
-    end
-    alias :delete_label! :remove_label!
+    #def remove_label!(name)
+    #  !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "-X-GM-LABELS", [name]) }
+    #end
+    #alias :delete_label! :remove_label!
 
     def inspect
       "#<Gmail::Message#{'0x%04x' % (object_id << 1)} mailbox=#{@mailbox.external_name}#{' uid='+@uid.to_s if @uid}#{' message_id='+@message_id.to_s if @message_id}>"
