@@ -23,6 +23,10 @@ module Gmail
       @labels ||= @gmail.conn.uid_fetch(uid, "X-GM-LABELS")[0].attr["X-GM-LABELS"]
     end
 
+    def thread_id
+      @thread_id ||= @gmail.conn.uid_fetch(uid, "X-GM-THRID")[0].attr["X-GM-THRID"]
+    end
+
     def uid
       @uid ||= @gmail.conn.uid_search(['HEADER', 'Message-ID', message_id])[0]
     end
