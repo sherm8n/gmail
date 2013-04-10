@@ -5,20 +5,23 @@ module Gmail
     # Raised when given label doesn't exists.
     class NoLabelError < Exception; end
 
-    attr_reader :uid, :msgid
+    attr_reader :uid, :msgid, :headers
 
     #TODO refactor to options hash
-    def initialize(mailbox, msgid, uid, size = nil, envelope = nil, flags = nil, labels = nil)
+    def initialize(mailbox, msgid, uid, thrid = nil, size = nil, envelope = nil, flags = nil, labels = nil, headers = nil)
       @mailbox = mailbox
       @gmail   = mailbox.instance_variable_get("@gmail") if mailbox
       @msgid = msgid
       @uid = uid
+      @thread_id = thrid
       @size = size
       @envelope = envelope
       @flags = flags
       @labels = labels
+      @headers = headers
     end
 
+    #TODO get rid of all such lazy loading, as it confuses a lot
     def labels
       @labels ||= @gmail.conn.uid_fetch(uid, "X-GM-LABELS")[0].attr["X-GM-LABELS"]
     end
@@ -117,7 +120,7 @@ module Gmail
 
     # Move to given box and delete from others.
     def move_to(name, from=nil)
-      label(name, from)
+      label(name)#, from)
       delete! if !%w[[Gmail]/Bin [Gmail]/Trash].include?(name)
     end
     alias :move :move_to
