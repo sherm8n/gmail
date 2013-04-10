@@ -19,6 +19,7 @@ module Gmail
     FLAG_ALIASES = {
       :msgid       => ['X-GM-MSGID'],
       :labels       => ['X-GM-LABELS'],
+      :thrid       => ['X-GM-THRID'],
       :uid       => ['UID'],
       :body      => ['BODY'],
       :structure => ['BODYSTRUCTURE'],
@@ -41,7 +42,7 @@ module Gmail
     end
 
     def fetch(range, &block)
-      search = [ FLAG_ALIASES[:msgid], FLAG_ALIASES[:uid], FLAG_ALIASES[:labels], FLAG_ALIASES[:flags], FLAG_ALIASES[:size], FLAG_ALIASES[:envelope] ]
+      search = [ FLAG_ALIASES[:msgid], FLAG_ALIASES[:uid], FLAG_ALIASES[:thrid], FLAG_ALIASES[:labels], FLAG_ALIASES[:flags], FLAG_ALIASES[:size], FLAG_ALIASES[:envelope] ]
 
       @gmail.mailbox(name) do
         list = @gmail.conn.fetch(range, "(#{search.join(' ')})") || []
