@@ -206,7 +206,7 @@ module Gmail
     alias_method :raw_message, :message
 
     def flags
-      @flags ||= Mail.new(@gmail.conn.uid_fetch(uid, "FLAGS")[0].attr["FLAGS"])
+      @flags ||= @gmail.conn.uid_fetch(uid, "FLAGS")[0].attr["FLAGS"]
     end
   end # Message
 end # Gmail
