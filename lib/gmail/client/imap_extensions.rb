@@ -3,7 +3,7 @@
 module GmailImapExtensions
   def self.patch_net_imap_response_parser(klass = Net::IMAP::ResponseParser)
     klass.class_eval do
-      def msg_att(n)
+      def msg_att()
         match(self.class::T_LPAR)
         attr = {}
         while true
