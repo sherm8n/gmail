@@ -97,9 +97,12 @@ module Gmail
         opts[:body]       and search.concat ['BODY', opts[:body]]
         opts[:query]      and search.concat opts[:query]
 
+
         @gmail.mailbox(name) do
           @gmail.conn.uid_search(search).collect do |uid|
-            message = (messages[uid] ||= Message.new(self, nil, uid))
+            #get gmail message id from uid
+            msgid = @gmail.conn.uid_fetch(uid, ['X-GM-MSGID']).first.attr['X-GM-MSGID']
+            message = (messages[uid] ||= Message.new(self, msgid, uid))
             block.call(message) if block_given?
             message
           end
